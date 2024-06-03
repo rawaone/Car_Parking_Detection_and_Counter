@@ -75,11 +75,11 @@ while True:
     alpha = 0.7
     frame_new = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
 
-    w, h = 220, 60
+    w, h = 500, 130
     cv2.rectangle(frame_new, (0, 0), (w, h), (255, 0, 0), -1)
-    cv2.putText(frame_new, f"Empty: {counter}/{len(park_positions)}", (int(w / 10), int(h * 4 / 3)), font, 2,
+    cv2.putText(frame_new, f"Empty: {counter}/{len(park_positions)}", (int(w / 10), int(h * 4 / 5)), font, 2,
                 (255, 255, 255), 2, cv2.LINE_AA)
-    cv2.putText(frame_new, f"Occupied: {occupied_counter}/{len(park_positions)}", (int(w / 10), int(h / 2)), font, 2,
+    cv2.putText(frame_new, f"Occupied: {occupied_counter}/{len(park_positions)}", (int(w / 10), int(h / 3)), font, 2,
                 (255, 255, 255), 2, cv2.LINE_AA)
 
     cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
