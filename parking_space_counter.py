@@ -4,6 +4,7 @@ import numpy as np
 
 cap = cv2.VideoCapture('input/parking.mp4')
 
+# Load parking positions
 with open('park_positions', 'rb') as f:
     park_positions = pickle.load(f)
 
@@ -57,7 +58,10 @@ while True:
     if cap.get(cv2.CAP_PROP_POS_FRAMES) == cap.get(cv2.CAP_PROP_FRAME_COUNT):
         cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
-    _, frame = cap.read()
+    ret, frame = cap.read()
+    if not ret:
+        break
+
     overlay = frame.copy()
 
     # Frame processing
@@ -78,14 +82,10 @@ while True:
     # Find contours
     contours, _ = cv2.findContours(fgMask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-    # Assuming the biggest contour is the car
-    if contours:  # Check if contours list is not empty
-        car_contour = max(contours, key=cv2.contourArea)
-        # rest of your code
-    else:
-        car_contour = None
-    if car_contour is not None:
-        (x, y, w, h) = cv2.boundingRect(car_contour)
+    for contour in contours:
+        (x, y, w, h) = cv2.boundingRect(contour)
+        if cv2.contourArea(contour) < 500:  # Ignore small contours that may not be cars
+            continue
         cv2.rectangle(frame, (x, y), (x+w, y+h), blue, 2)
 
         # Get the center of the car
