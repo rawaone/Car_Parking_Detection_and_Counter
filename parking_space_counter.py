@@ -17,14 +17,22 @@ empty = 0.22
 # Create a background subtractor
 backSub = cv2.createBackgroundSubtractorMOG2()
 
+# Define colors for visualization
+green = (0, 255, 0)
+red = (0, 0, 255)
+blue = (255, 0, 0)
+
+# Function to draw a line from a point to a parking spot
+def draw_line(image, start_point, end_point, color=(255, 0, 0), thickness=2):
+    cv2.line(image, start_point, end_point, color, thickness)
+
 def parking_space_counter(img_processed):
-    global counter
-    global occupied_counter  # New counter for occupied spaces
-
+    global counter, occupied_counter, empty_spaces
     counter = 0
-    occupied_counter = 0  # Initialize the occupied counter
+    occupied_counter = 0
+    empty_spaces = []
 
-    for position in park_positions:
+    for i, position in enumerate(park_positions):
         x, y = position
 
         img_crop = img_processed[y:y + height, x:x + width]
@@ -33,18 +41,19 @@ def parking_space_counter(img_processed):
         ratio = count / full
 
         if ratio < empty:
-            color = (0, 255, 0)
+            color = green
             counter += 1
+            empty_spaces.append(i)  # Add the index of the empty space
         else:
-            color = (0, 0, 255)
-            occupied_counter += 1  # Increment the occupied counter
+            color = red
+            occupied_counter += 1
 
         cv2.rectangle(overlay, position, (position[0] + width, position[1] + height), color, -1)
         cv2.putText(overlay, "{:.2f}".format(ratio), (x + 4, y + height - 4), font, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
 
-while True:
+    return empty_spaces
 
-    # Video looping
+while True:
     if cap.get(cv2.CAP_PROP_POS_FRAMES) == cap.get(cv2.CAP_PROP_FRAME_COUNT):
         cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
@@ -56,7 +65,7 @@ while True:
     img_blur = cv2.GaussianBlur(img_gray, (3, 3), 1)
     img_thresh = cv2.adaptiveThreshold(img_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 25, 16)
 
-    parking_space_counter(img_thresh)
+    empty_spaces = parking_space_counter(img_thresh)
 
     # Apply background subtraction
     fgMask = backSub.apply(frame)
@@ -66,11 +75,29 @@ while True:
     fgMask = cv2.morphologyEx(fgMask, cv2.MORPH_OPEN, kernel)
     fgMask = cv2.morphologyEx(fgMask, cv2.MORPH_DILATE, kernel)
 
-    # Find and draw contours
+    # Find contours
     contours, _ = cv2.findContours(fgMask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    for contour in contours:
-        (x, y, w, h) = cv2.boundingRect(contour)
-        cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+
+    # Assuming the biggest contour is the car
+    if contours:  # Check if contours list is not empty
+        car_contour = max(contours, key=cv2.contourArea)
+        # rest of your code
+    else:
+        car_contour = None
+    if car_contour is not None:
+        (x, y, w, h) = cv2.boundingRect(car_contour)
+        cv2.rectangle(frame, (x, y), (x+w, y+h), blue, 2)
+
+        # Get the center of the car
+        car_center = (x + w // 2, y + h // 2)
+
+        # Find the closest empty parking spot
+        if empty_spaces:
+            closest_spot = min(empty_spaces, key=lambda i: np.linalg.norm(np.array(park_positions[i]) - np.array(car_center)))
+            closest_spot_position = park_positions[closest_spot]
+
+            # Draw a line from the car center to the closest spot
+            draw_line(frame, car_center, closest_spot_position, green, 3)
 
     alpha = 0.7
     frame_new = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
