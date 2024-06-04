@@ -23,6 +23,9 @@ green = (0, 255, 0)
 red = (0, 0, 255)
 blue = (255, 0, 0)
 
+# Define ROI coordinates (example coordinates, adjust based on the parking area)
+roi_corners = np.array([[(1735, 17), (1731, 1023), (48, 1050), (67, 650), (672, 407), (1098, 9)]], dtype=np.int32)
+
 # Function to draw a line from a point to a parking spot
 def draw_line(image, start_point, end_point, color=(255, 0, 0), thickness=2):
     cv2.line(image, start_point, end_point, color, thickness)
@@ -75,21 +78,29 @@ while True:
     fgMask = backSub.apply(frame)
 
     # Apply morphological operations
-    kernel = np.ones((5,5),np.uint8)
+    kernel = np.ones((5, 5), np.uint8)
     fgMask = cv2.morphologyEx(fgMask, cv2.MORPH_OPEN, kernel)
     fgMask = cv2.morphologyEx(fgMask, cv2.MORPH_DILATE, kernel)
 
     # Find contours
     contours, _ = cv2.findContours(fgMask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
+    # Create mask for ROI
+    mask = np.zeros_like(frame, dtype=np.uint8)
+    cv2.fillPoly(mask, roi_corners, (255, 255, 255))
+    mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+
     for contour in contours:
         (x, y, w, h) = cv2.boundingRect(contour)
         if cv2.contourArea(contour) < 500:  # Ignore small contours that may not be cars
             continue
-        cv2.rectangle(frame, (x, y), (x+w, y+h), blue, 2)
-
-        # Get the center of the car
         car_center = (x + w // 2, y + h // 2)
+
+        # Check if car center is inside ROI
+        if mask[car_center[1], car_center[0]] == 0:
+            continue
+
+        cv2.rectangle(frame, (x, y), (x + w, y + h), blue, 2)
 
         # Find the closest empty parking spot
         if empty_spaces:
