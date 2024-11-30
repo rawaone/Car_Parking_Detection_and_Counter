@@ -51,7 +51,7 @@ Additionally, when cars approach the parking area, the system automatically sugg
 
 **Implementation** 
 
-![](Aspose.Words.ae87deb0-749d-44c0-ba78-8081cbebf91f.001.jpeg)
+![](Screenshot_1_main.png)
 
 Image1: (Main Application Interface) 
 
