@@ -55,7 +55,7 @@ Additionally, when cars approach the parking area, the system automatically sugg
 
 Image1: (Main Application Interface) 
 
-![](Aspose.Words.ae87deb0-749d-44c0-ba78-8081cbebf91f.002.png)
+![](Screenshot 2024-06-07 223722.png)
 
 Image2: (Vehicle Detection and Vehicle-Parking Space Suggestion (Navigation)) (Parking Space Occupancy Detection and Visualization) 
 
